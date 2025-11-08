@@ -94,6 +94,36 @@ function getRecentOrders(mysqli $conn, int $limit = 10): array
     return $orders;
 }
 
+function markBookingCompleted(mysqli $conn, int $bookingId): bool
+{
+    $stmt = $conn->prepare('UPDATE bookings SET status = ? WHERE id = ?');
+    $status = 'completed';
+    $stmt->bind_param('si', $status, $bookingId);
+    $result = $stmt->execute();
+    $stmt->close();
+    return $result;
+}
+
+function getActiveBookings(mysqli $conn): array
+{
+    $result = $conn->query("SELECT * FROM bookings WHERE status != 'completed' ORDER BY created_at DESC");
+    $bookings = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    if ($result) {
+        $result->close();
+    }
+    return $bookings;
+}
+
+function getCompletedBookings(mysqli $conn): array
+{
+    $result = $conn->query("SELECT * FROM bookings WHERE status = 'completed' ORDER BY created_at DESC");
+    $bookings = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    if ($result) {
+        $result->close();
+    }
+    return $bookings;
+}
+
 ?>
 
 

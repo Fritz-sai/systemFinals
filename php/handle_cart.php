@@ -13,6 +13,13 @@ if (!isset($_SESSION['cart'])) {
 }
 
 switch ($action) {
+    case 'update_delivery':
+        $deliveryOption = $_POST['delivery_option'] ?? 'pickup';
+        if (in_array($deliveryOption, ['pickup', 'delivery'])) {
+            $_SESSION['delivery_option'] = $deliveryOption;
+        }
+        break;
+
     case 'add':
         $productId = (int) ($_POST['product_id'] ?? 0);
         $quantity = max(1, (int) ($_POST['quantity'] ?? 1));
@@ -92,6 +99,16 @@ switch ($action) {
             exit;
         }
 
+        // Get delivery option and shipping fee from POST (or session as fallback)
+        $deliveryOption = $_POST['delivery_option'] ?? $_SESSION['delivery_option'] ?? 'pickup';
+        $shippingFee = isset($_POST['shipping_fee']) ? (float) $_POST['shipping_fee'] : 0;
+        $orderTotal = isset($_POST['total']) ? (float) $_POST['total'] : 0;
+
+        // Store delivery info in session for reference
+        $_SESSION['checkout_delivery_option'] = $deliveryOption;
+        $_SESSION['checkout_shipping_fee'] = $shippingFee;
+        $_SESSION['checkout_total'] = $orderTotal;
+
         $userId = (int) $_SESSION['user_id'];
         $conn->begin_transaction();
         try {
@@ -99,13 +116,16 @@ switch ($action) {
             $status = 'pending';
             foreach ($_SESSION['cart'] as $item) {
                 $quantity = (int) $item['quantity'];
-                $total = (float) $item['price'] * $quantity;
-                $orderStmt->bind_param('iiids', $userId, $item['product_id'], $quantity, $total, $status);
+                $itemTotal = (float) $item['price'] * $quantity;
+                $orderStmt->bind_param('iiids', $userId, $item['product_id'], $quantity, $itemTotal, $status);
                 $orderStmt->execute();
             }
             $orderStmt->close();
             $conn->commit();
+            
+            // Clear cart and delivery option after successful checkout
             $_SESSION['cart'] = [];
+            unset($_SESSION['delivery_option']);
             $_SESSION['cart_success'] = 'Thank you! Your order has been placed.';
         } catch (Throwable $e) {
             $conn->rollback();

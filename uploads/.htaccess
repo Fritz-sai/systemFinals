@@ -1,0 +1,10 @@
+# Prevent direct access to uploaded files (optional - remove if you want direct access)
+# Order deny,allow
+# Deny from all
+
+# Or allow access but prevent script execution
+<FilesMatch "\.(php|phtml|php3|php4|php5|pl|py|jsp|asp|sh|cgi)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
