@@ -1,0 +1,317 @@
+/* Admin Orders Management Styles */
+
+.orders-management {
+    margin-top: 2rem;
+}
+
+.section-description {
+    color: var(--color-muted, #666);
+    margin-bottom: 1.5rem;
+    font-size: 0.95rem;
+}
+
+.orders-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.orders-table th {
+    background: rgba(42, 115, 255, 0.05);
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--color-secondary, #333);
+    border-bottom: 2px solid var(--color-border, #e0e0e0);
+}
+
+.orders-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--color-border, #e0e0e0);
+    vertical-align: middle;
+}
+
+.orders-table tbody tr:hover {
+    background: rgba(42, 115, 255, 0.02);
+}
+
+.customer-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.customer-info strong {
+    color: var(--color-secondary, #333);
+    font-weight: 600;
+}
+
+.customer-info small {
+    color: var(--color-muted, #666);
+    font-size: 0.85rem;
+}
+
+.delivery-type {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--radius-sm, 8px);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.delivery-pickup {
+    background: rgba(66, 186, 150, 0.15);
+    color: #218c74;
+}
+
+.delivery-delivery {
+    background: rgba(42, 115, 255, 0.15);
+    color: #2a73ff;
+}
+
+.order-status-select {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border, #e0e0e0);
+    border-radius: var(--radius-sm, 8px);
+    background: var(--color-bg, #ffffff);
+    color: var(--color-text, #555);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+    min-width: 150px;
+}
+
+.order-status-select:hover {
+    border-color: var(--color-primary, #2a73ff);
+}
+
+.order-status-select:focus {
+    outline: none;
+    border-color: var(--color-primary, #2a73ff);
+    box-shadow: 0 0 0 3px rgba(42, 115, 255, 0.2);
+}
+
+.no-proof {
+    color: var(--color-muted, #999);
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--color-bg, #ffffff);
+    border-radius: var(--radius-md, 12px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+}
+
+.modal-content-large {
+    max-width: 800px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--color-border, #e0e0e0);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: var(--color-secondary, #333);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: var(--color-muted, #999);
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm, 8px);
+    transition: var(--transition);
+}
+
+.modal-close:hover {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--color-secondary, #333);
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--color-secondary, #333);
+}
+
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px dashed var(--color-border, #e0e0e0);
+    border-radius: var(--radius-sm, 8px);
+    background: var(--color-bg, #ffffff);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.form-group input[type="file"]:hover {
+    border-color: var(--color-primary, #2a73ff);
+    background: rgba(42, 115, 255, 0.05);
+}
+
+.proof-preview {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--color-bg, #f5f5f5);
+    border-radius: var(--radius-sm, 8px);
+    border: 1px solid var(--color-border, #e0e0e0);
+}
+
+.proof-preview img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-sm, 8px);
+    box-shadow: var(--shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.1));
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: normal;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+.btn-secondary {
+    background: var(--color-bg, #f5f5f5);
+    color: var(--color-text, #555);
+    border: 1px solid var(--color-border, #e0e0e0);
+}
+
+.btn-secondary:hover {
+    background: var(--color-border, #e0e0e0);
+}
+
+.proof-viewer {
+    text-align: center;
+}
+
+.proof-viewer img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-sm, 8px);
+    box-shadow: var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.15));
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .orders-table {
+        font-size: 0.9rem;
+    }
+
+    .orders-table th,
+    .orders-table td {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .orders-table th:nth-child(2),
+    .orders-table td:nth-child(2) {
+        min-width: 120px;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 1rem;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions button {
+        width: 100%;
+    }
+}
+

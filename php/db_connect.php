@@ -61,6 +61,10 @@ $tableQueries = [
         total DECIMAL(10,2) NOT NULL,
         order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         status ENUM('pending', 'processing', 'completed', 'cancelled') DEFAULT 'pending',
+        delivery_type ENUM('pickup', 'delivery') DEFAULT 'pickup',
+        shipping_fee DECIMAL(10,2) DEFAULT 0,
+        proof_image VARCHAR(255) NULL,
+        order_status ENUM('pending', 'out_for_delivery', 'delivered', 'received') DEFAULT 'pending',
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
     ) ENGINE=InnoDB"
@@ -146,9 +150,32 @@ function seedBookings(mysqli $conn): void
     $stmt->close();
 }
 
+// Update orders table to add new columns if they don't exist
+function updateOrdersTable(mysqli $conn): void
+{
+    // Check if columns exist and add them if they don't
+    $columnsToAdd = [
+        "delivery_type" => "ALTER TABLE orders ADD COLUMN delivery_type ENUM('pickup', 'delivery') DEFAULT 'pickup'",
+        "shipping_fee" => "ALTER TABLE orders ADD COLUMN shipping_fee DECIMAL(10,2) DEFAULT 0",
+        "proof_image" => "ALTER TABLE orders ADD COLUMN proof_image VARCHAR(255) NULL",
+        "order_status" => "ALTER TABLE orders ADD COLUMN order_status ENUM('pending', 'out_for_delivery', 'delivered', 'received') DEFAULT 'pending'"
+    ];
+
+    foreach ($columnsToAdd as $column => $query) {
+        $check = $conn->query("SHOW COLUMNS FROM orders LIKE '$column'");
+        if ($check && $check->num_rows == 0) {
+            $conn->query($query);
+        }
+        if ($check) {
+            $check->close();
+        }
+    }
+}
+
 seedAdminUser($conn);
 seedProducts($conn);
 seedBookings($conn);
+updateOrdersTable($conn);
 
 // Ensure sessions are started once per request
 if (session_status() === PHP_SESSION_NONE) {

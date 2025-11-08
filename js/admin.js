@@ -1,4 +1,66 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Sidebar Navigation Functionality
+    const sidebarLinks = document.querySelectorAll('.sidebar-link');
+    const sections = document.querySelectorAll('[id$="-section"], #sales-overview');
+
+    // Handle sidebar link clicks with smooth scroll
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('data-section');
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                // Remove active class from all links
+                sidebarLinks.forEach(l => l.classList.remove('active'));
+                // Add active class to clicked link
+                link.classList.add('active');
+                
+                // Smooth scroll to target
+                const offset = 100; // Offset for sticky header
+                const elementPosition = targetElement.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+
+    // Update active link based on scroll position
+    const updateActiveLink = () => {
+        const scrollPosition = window.scrollY + 150; // Offset for better detection
+
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.offsetHeight;
+            const sectionId = section.getAttribute('id');
+
+            if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                sidebarLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('data-section') === sectionId) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        });
+    };
+
+        // Check on scroll
+        let scrollTimeout;
+        window.addEventListener('scroll', () => {
+            if (scrollTimeout) {
+                clearTimeout(scrollTimeout);
+            }
+            scrollTimeout = setTimeout(updateActiveLink, 100);
+        });
+
+        // Initial check
+        updateActiveLink();
+
     // Handle product edit button clicks
     const editButtons = document.querySelectorAll('.edit-product-btn');
     const productForm = document.getElementById('product-form');
@@ -107,5 +169,214 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
+
+    // Sales Analysis Charts
+    if (typeof salesData !== 'undefined' && typeof Chart !== 'undefined') {
+        initializeSalesCharts();
+    }
 });
+
+// Initialize Sales Analysis Charts
+function initializeSalesCharts() {
+    // Revenue Trend Chart (Last 30 Days)
+    const revenueCtx = document.getElementById('revenueChart');
+    if (revenueCtx && salesData.dailySales) {
+        const dailyData = salesData.dailySales;
+        const labels = dailyData.map(item => {
+            const date = new Date(item.date);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        });
+        const revenues = dailyData.map(item => parseFloat(item.revenue) || 0);
+
+        new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: revenues,
+                    borderColor: '#2a73ff',
+                    backgroundColor: 'rgba(42, 115, 255, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toFixed(0);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Orders by Status Chart
+    const statusCtx = document.getElementById('statusChart');
+    if (statusCtx && salesData.ordersByStatus) {
+        const statusData = salesData.ordersByStatus;
+        const labels = statusData.map(item => item.status.charAt(0).toUpperCase() + item.status.slice(1));
+        const counts = statusData.map(item => parseInt(item.count) || 0);
+        const colors = ['#ff9800', '#ffc107', '#42ba96', '#d32f2f'];
+
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: counts,
+                    backgroundColor: colors.slice(0, labels.length),
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    // Monthly Sales Chart (Last 6 Months)
+    const monthlyCtx = document.getElementById('monthlyChart');
+    if (monthlyCtx && salesData.monthlySales) {
+        const monthlyData = salesData.monthlySales;
+        const labels = monthlyData.map(item => {
+            const [year, month] = item.month.split('-');
+            const date = new Date(year, month - 1);
+            return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        });
+        const revenues = monthlyData.map(item => parseFloat(item.revenue) || 0);
+        const orders = monthlyData.map(item => parseInt(item.order_count) || 0);
+
+        new Chart(monthlyCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Revenue ($)',
+                        data: revenues,
+                        backgroundColor: 'rgba(42, 115, 255, 0.6)',
+                        borderColor: '#2a73ff',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Orders',
+                        data: orders,
+                        type: 'line',
+                        borderColor: '#42ba96',
+                        backgroundColor: 'rgba(66, 186, 150, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toFixed(0);
+                            }
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Top Products Chart
+    const productsCtx = document.getElementById('productsChart');
+    if (productsCtx && salesData.topProducts) {
+        const productsData = salesData.topProducts;
+        const labels = productsData.map(item => item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name);
+        const revenues = productsData.map(item => parseFloat(item.total_revenue) || 0);
+
+        new Chart(productsCtx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Revenue ($)',
+                    data: revenues,
+                    backgroundColor: [
+                        'rgba(42, 115, 255, 0.8)',
+                        'rgba(66, 186, 150, 0.8)',
+                        'rgba(255, 152, 0, 0.8)',
+                        'rgba(255, 193, 7, 0.8)',
+                        'rgba(156, 39, 176, 0.8)'
+                    ],
+                    borderColor: [
+                        '#2a73ff',
+                        '#42ba96',
+                        '#ff9800',
+                        '#ffc107',
+                        '#9c27b0'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                indexAxis: 'y',
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '$' + value.toFixed(0);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
 

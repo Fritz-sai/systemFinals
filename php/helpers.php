@@ -25,6 +25,7 @@ function renderNav(): void
 
     if ($isLoggedIn) {
         echo '<li class="nav-user">Hi, ' . htmlspecialchars($_SESSION['user_name'] ?? 'Customer') . '</li>';
+        echo '<li><a href="orders.php">My Orders</a></li>';
         if ($role === 'admin') {
             echo '<li><a href="admin.php">Admin</a></li>';
         }
