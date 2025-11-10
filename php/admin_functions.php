@@ -125,6 +125,17 @@ function getReceivedOrders(mysqli $conn): array
     return $orders;
 }
 
+function getActiveOrders(mysqli $conn): array
+{
+    // Get orders that are not delivered or received (for management section)
+    $result = $conn->query("SELECT o.*, p.name AS product_name, p.price AS product_price, u.name AS customer_name, u.email AS customer_email FROM orders o JOIN products p ON o.product_id = p.id JOIN users u ON o.user_id = u.id WHERE o.order_status NOT IN ('delivered', 'received') ORDER BY o.order_date DESC");
+    $orders = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    if ($result) {
+        $result->close();
+    }
+    return $orders;
+}
+
 function getOrderById(mysqli $conn, int $id): ?array
 {
     $stmt = $conn->prepare('SELECT o.*, p.name AS product_name, p.price AS product_price, u.name AS customer_name, u.email AS customer_email FROM orders o JOIN products p ON o.product_id = p.id JOIN users u ON o.user_id = u.id WHERE o.id = ? LIMIT 1');
