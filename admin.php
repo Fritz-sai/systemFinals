@@ -107,6 +107,7 @@ $activeBookings = getActiveBookings($conn);
 $completedBookings = getCompletedBookings($conn);
 $orders = getRecentOrders($conn);
 $allOrders = getAllOrders($conn); // Get all orders for management section
+$activeOrders = getActiveOrders($conn); // Get active orders (excluding delivered/received) for management
 $deliveredOrders = getDeliveredOrders($conn); // Get delivered orders
 $receivedOrders = getReceivedOrders($conn); // Get received orders
 $products = getProducts($conn);
@@ -528,7 +529,7 @@ renderFlashMessages([
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($allOrders as $order): ?>
+                        <?php foreach ($activeOrders as $order): ?>
                             <tr data-order-id="<?php echo (int) $order['id']; ?>">
                                 <td>#<?php echo (int) $order['id']; ?></td>
                                 <td>
@@ -569,8 +570,8 @@ renderFlashMessages([
                                 </td>
                             </tr>
                         <?php endforeach; ?>
-                        <?php if (empty($allOrders)): ?>
-                            <tr><td colspan="9">No orders found.</td></tr>
+                        <?php if (empty($activeOrders)): ?>
+                            <tr><td colspan="9">No active orders found. All orders have been delivered or received.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>

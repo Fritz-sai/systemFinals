@@ -184,8 +184,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     showNotification(result.message || 'Order status updated successfully!', 'success');
                     select.setAttribute('data-current-status', newStatus);
                     
-                    // Refresh sales analysis if status changed to delivered or received
+                    // If order is delivered or received, remove it from Orders Management table
                     if (newStatus === 'delivered' || newStatus === 'received') {
+                        const orderRow = select.closest('tr');
+                        if (orderRow) {
+                            // Check if we're in the Orders Management section
+                            const ordersManagementSection = orderRow.closest('#orders-management-section');
+                            if (ordersManagementSection) {
+                                // Fade out and remove the row
+                                orderRow.style.transition = 'opacity 0.3s ease';
+                                orderRow.style.opacity = '0.5';
+                                setTimeout(() => {
+                                    orderRow.remove();
+                                    
+                                    // Check if table is empty
+                                    const tbody = ordersManagementSection.querySelector('tbody');
+                                    if (tbody && tbody.querySelectorAll('tr').length === 0) {
+                                        tbody.innerHTML = '<tr><td colspan="9">No active orders found. All orders have been delivered or received.</td></tr>';
+                                    }
+                                }, 300);
+                            }
+                        }
                         refreshSalesAnalysis();
                     }
                 } else {
