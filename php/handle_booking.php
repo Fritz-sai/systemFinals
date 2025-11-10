@@ -5,6 +5,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ../booking.php');
     exit;
 }
+if (!isset($_SESSION['user_id'])) {
+    $_SESSION['login_errors'] = ['Please log in to place an order or book'];
+    header('Location: ../login.php');
+    exit;
+}
 
 $name = trim($_POST['name'] ?? '');
 $contact = trim($_POST['contact'] ?? '');

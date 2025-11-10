@@ -107,6 +107,8 @@ $activeBookings = getActiveBookings($conn);
 $completedBookings = getCompletedBookings($conn);
 $orders = getRecentOrders($conn);
 $allOrders = getAllOrders($conn); // Get all orders for management section
+$deliveredOrders = getDeliveredOrders($conn); // Get delivered orders
+$receivedOrders = getReceivedOrders($conn); // Get received orders
 $products = getProducts($conn);
 
 // Sales Analytics Data
@@ -148,13 +150,13 @@ renderFlashMessages([
             <nav class="sidebar-nav">
                 <h3>Quick Navigation</h3>
                 <ul>
-                    <li><a href="#sales-overview" class="sidebar-link active" data-section="sales-overview">
+                    <li><a href="#dashboard-summary" class="sidebar-link active" data-section="dashboard-summary">
                         <span class="icon">📊</span>
-                        <span>Sales Overview</span>
+                        <span>Dashboard Summary</span>
                     </a></li>
-                    <li><a href="#sales-analysis" class="sidebar-link" data-section="sales-analysis">
-                        <span class="icon">📈</span>
-                        <span>Sales Analysis</span>
+                    <li><a href="#bookings-section" class="sidebar-link" data-section="bookings-section">
+                        <span class="icon">📅</span>
+                        <span>Bookings</span>
                     </a></li>
                     <li><a href="#products-section" class="sidebar-link" data-section="products-section">
                         <span class="icon">📦</span>
@@ -168,10 +170,15 @@ renderFlashMessages([
                         <span class="icon">📋</span>
                         <span>Orders Management</span>
                     </a></li>
-                    <li><a href="#bookings-section" class="sidebar-link" data-section="bookings-section">
-                        <span class="icon">📅</span>
-                        <span>Bookings</span>
+                    <li><a href="#delivered-orders-section" class="sidebar-link" data-section="delivered-orders-section">
+                        <span class="icon">🚚</span>
+                        <span>Delivered Orders</span>
                     </a></li>
+                    <li><a href="#received-orders-section" class="sidebar-link" data-section="received-orders-section">
+                        <span class="icon">✅</span>
+                        <span>Received Orders</span>
+                    </a></li>
+                    
                 </ul>
             </nav>
         </aside>
@@ -247,13 +254,26 @@ renderFlashMessages([
                 </div>
                 
                 <div class="summary-card">
-                    <div class="card-icon">📅</div>
+                    <div class="card-icon">⏳</div>
                     <div class="card-content">
-                        <span class="card-label">Total Bookings</span>
-                        <strong class="card-value" id="summary-bookings"><?php echo $monthComparison['this_month']['bookings']; ?></strong>
-                        <span class="card-change <?php echo $monthComparison['changes']['bookings'] >= 0 ? 'positive' : 'negative'; ?>" id="summary-bookings-change">
-                            <?php echo $monthComparison['changes']['bookings'] >= 0 ? '+' : ''; ?><?php echo $monthComparison['changes']['bookings']; ?>%
+                        <span class="card-label">Pending Bookings</span>
+                        <strong class="card-value" id="summary-pending-bookings"><?php echo $monthComparison['this_month']['pending_bookings']; ?></strong>
+                        <span class="card-change <?php echo $monthComparison['changes']['pending_bookings'] >= 0 ? 'positive' : 'negative'; ?>" id="summary-pending-bookings-change">
+                            <?php echo $monthComparison['changes']['pending_bookings'] >= 0 ? '+' : ''; ?><?php echo $monthComparison['changes']['pending_bookings']; ?>%
                         </span>
+                        <small class="card-hint">Bookings awaiting completion</small>
+                    </div>
+                </div>
+                
+                <div class="summary-card">
+                    <div class="card-icon">✅</div>
+                    <div class="card-content">
+                        <span class="card-label">Completed Bookings</span>
+                        <strong class="card-value" id="summary-completed-bookings"><?php echo $monthComparison['this_month']['completed_bookings']; ?></strong>
+                        <span class="card-change <?php echo $monthComparison['changes']['completed_bookings'] >= 0 ? 'positive' : 'negative'; ?>" id="summary-completed-bookings-change">
+                            <?php echo $monthComparison['changes']['completed_bookings'] >= 0 ? '+' : ''; ?><?php echo $monthComparison['changes']['completed_bookings']; ?>%
+                        </span>
+                        <small class="card-hint">Finished bookings</small>
                     </div>
                 </div>
                 
@@ -312,19 +332,7 @@ renderFlashMessages([
             </div>
         </div>
 
-        <div class="card stats" id="sales-overview">
-            <h2>Sales Overview</h2>
-            <div class="stats-row">
-                <div>
-                    <span>Total Orders</span>
-                    <strong><?php echo (int) $stats['orders']; ?></strong>
-                </div>
-                <div>
-                    <span>Total Revenue</span>
-                    <strong>$<?php echo number_format((float) $stats['revenue'], 2); ?></strong>
-                </div>
-            </div>
-        </div>
+        
 
         <!-- Sales Analysis Dashboard -->
        
@@ -563,6 +571,120 @@ renderFlashMessages([
                         <?php endforeach; ?>
                         <?php if (empty($allOrders)): ?>
                             <tr><td colspan="9">No orders found.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Delivered Orders Section -->
+        <div class="card orders-management delivered-orders" id="delivered-orders-section">
+            <h2>Delivered Orders</h2>
+            <p class="section-description">Orders that have been delivered to customers.</p>
+            
+            <div class="table-wrapper">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                            <th>Delivery Type</th>
+                            <th>Order Date</th>
+                            <th>Proof</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($deliveredOrders as $order): ?>
+                            <tr data-order-id="<?php echo (int) $order['id']; ?>">
+                                <td>#<?php echo (int) $order['id']; ?></td>
+                                <td>
+                                    <div class="customer-info">
+                                        <strong><?php echo htmlspecialchars($order['customer_name']); ?></strong>
+                                        <small><?php echo htmlspecialchars($order['customer_email']); ?></small>
+                                    </div>
+                                </td>
+                                <td><?php echo htmlspecialchars($order['product_name']); ?></td>
+                                <td><?php echo (int) $order['quantity']; ?></td>
+                                <td>$<?php echo number_format((float) $order['total'], 2); ?></td>
+                                <td>
+                                    <span class="delivery-type delivery-<?php echo htmlspecialchars($order['delivery_type'] ?? 'pickup'); ?>">
+                                        <?php echo ucfirst($order['delivery_type'] ?? 'pickup'); ?>
+                                    </span>
+                                </td>
+                                <td><?php echo date('M j, Y g:i A', strtotime($order['order_date'])); ?></td>
+                                <td>
+                                    <?php if (!empty($order['proof_image'])): ?>
+                                        <button type="button" class="btn-link view-proof-btn" data-proof-path="<?php echo htmlspecialchars($order['proof_image']); ?>">
+                                            View Proof
+                                        </button>
+                                    <?php else: ?>
+                                        <span class="no-proof">No proof</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($deliveredOrders)): ?>
+                            <tr><td colspan="8">No delivered orders found.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Received Orders Section -->
+        <div class="card orders-management received-orders" id="received-orders-section">
+            <h2>Received Orders</h2>
+            <p class="section-description">Orders that have been received by customers.</p>
+            
+            <div class="table-wrapper">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                            <th>Delivery Type</th>
+                            <th>Order Date</th>
+                            <th>Proof</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($receivedOrders as $order): ?>
+                            <tr data-order-id="<?php echo (int) $order['id']; ?>">
+                                <td>#<?php echo (int) $order['id']; ?></td>
+                                <td>
+                                    <div class="customer-info">
+                                        <strong><?php echo htmlspecialchars($order['customer_name']); ?></strong>
+                                        <small><?php echo htmlspecialchars($order['customer_email']); ?></small>
+                                    </div>
+                                </td>
+                                <td><?php echo htmlspecialchars($order['product_name']); ?></td>
+                                <td><?php echo (int) $order['quantity']; ?></td>
+                                <td>$<?php echo number_format((float) $order['total'], 2); ?></td>
+                                <td>
+                                    <span class="delivery-type delivery-<?php echo htmlspecialchars($order['delivery_type'] ?? 'pickup'); ?>">
+                                        <?php echo ucfirst($order['delivery_type'] ?? 'pickup'); ?>
+                                    </span>
+                                </td>
+                                <td><?php echo date('M j, Y g:i A', strtotime($order['order_date'])); ?></td>
+                                <td>
+                                    <?php if (!empty($order['proof_image'])): ?>
+                                        <button type="button" class="btn-link view-proof-btn" data-proof-path="<?php echo htmlspecialchars($order['proof_image']); ?>">
+                                            View Proof
+                                        </button>
+                                    <?php else: ?>
+                                        <span class="no-proof">No proof</span>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($receivedOrders)): ?>
+                            <tr><td colspan="8">No received orders found.</td></tr>
                         <?php endif; ?>
                     </tbody>
                 </table>

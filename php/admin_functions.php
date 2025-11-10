@@ -105,6 +105,26 @@ function getAllOrders(mysqli $conn): array
     return $orders;
 }
 
+function getDeliveredOrders(mysqli $conn): array
+{
+    $result = $conn->query("SELECT o.*, p.name AS product_name, p.price AS product_price, u.name AS customer_name, u.email AS customer_email FROM orders o JOIN products p ON o.product_id = p.id JOIN users u ON o.user_id = u.id WHERE o.order_status = 'delivered' ORDER BY o.order_date DESC");
+    $orders = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    if ($result) {
+        $result->close();
+    }
+    return $orders;
+}
+
+function getReceivedOrders(mysqli $conn): array
+{
+    $result = $conn->query("SELECT o.*, p.name AS product_name, p.price AS product_price, u.name AS customer_name, u.email AS customer_email FROM orders o JOIN products p ON o.product_id = p.id JOIN users u ON o.user_id = u.id WHERE o.order_status = 'received' ORDER BY o.order_date DESC");
+    $orders = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    if ($result) {
+        $result->close();
+    }
+    return $orders;
+}
+
 function getOrderById(mysqli $conn, int $id): ?array
 {
     $stmt = $conn->prepare('SELECT o.*, p.name AS product_name, p.price AS product_price, u.name AS customer_name, u.email AS customer_email FROM orders o JOIN products p ON o.product_id = p.id JOIN users u ON o.user_id = u.id WHERE o.id = ? LIMIT 1');
@@ -268,7 +288,7 @@ function getDashboardSummary(mysqli $conn, string $period = 'this_month'): array
     $totalOrdersData = $totalOrdersResult ? $totalOrdersResult->fetch_assoc() : ['total_orders' => 0, 'total_sales' => 0, 'total_quantity' => 0];
     if ($totalOrdersResult) $totalOrdersResult->close();
 
-    // Bookings
+    // Bookings - Separate pending and completed
     $bookingsWhere = '';
     switch ($period) {
         case 'this_month':
@@ -281,10 +301,24 @@ function getDashboardSummary(mysqli $conn, string $period = 'this_month'): array
             $bookingsWhere = "1=1";
             break;
     }
-    $bookingsQuery = "SELECT COUNT(*) AS bookings FROM bookings WHERE $bookingsWhere";
-    $bookingsResult = $conn->query($bookingsQuery);
-    $bookingsData = $bookingsResult ? $bookingsResult->fetch_assoc() : ['bookings' => 0];
-    if ($bookingsResult) $bookingsResult->close();
+    
+    // Pending bookings (not completed)
+    $pendingBookingsQuery = "SELECT COUNT(*) AS bookings FROM bookings WHERE $bookingsWhere AND status != 'completed'";
+    $pendingBookingsResult = $conn->query($pendingBookingsQuery);
+    $pendingBookingsData = $pendingBookingsResult ? $pendingBookingsResult->fetch_assoc() : ['bookings' => 0];
+    if ($pendingBookingsResult) $pendingBookingsResult->close();
+    
+    // Completed bookings
+    $completedBookingsQuery = "SELECT COUNT(*) AS bookings FROM bookings WHERE $bookingsWhere AND status = 'completed'";
+    $completedBookingsResult = $conn->query($completedBookingsQuery);
+    $completedBookingsData = $completedBookingsResult ? $completedBookingsResult->fetch_assoc() : ['bookings' => 0];
+    if ($completedBookingsResult) $completedBookingsResult->close();
+    
+    // Total bookings
+    $totalBookingsQuery = "SELECT COUNT(*) AS bookings FROM bookings WHERE $bookingsWhere";
+    $totalBookingsResult = $conn->query($totalBookingsQuery);
+    $totalBookingsData = $totalBookingsResult ? $totalBookingsResult->fetch_assoc() : ['bookings' => 0];
+    if ($totalBookingsResult) $totalBookingsResult->close();
 
     // Profit (assuming 30% profit margin, or can be calculated from cost if available)
     $profit = (float)$soldOrdersData['sold_sales'] * 0.30; // 30% profit margin
@@ -298,7 +332,9 @@ function getDashboardSummary(mysqli $conn, string $period = 'this_month'): array
         'total_quantity' => (int)$totalOrdersData['total_quantity'],
         'sales' => (float)$soldOrdersData['sold_sales'],
         'total_sales' => (float)$totalOrdersData['total_sales'],
-        'bookings' => (int)$bookingsData['bookings'],
+        'bookings' => (int)$totalBookingsData['bookings'],
+        'pending_bookings' => (int)$pendingBookingsData['bookings'],
+        'completed_bookings' => (int)$completedBookingsData['bookings'],
         'profit' => round($profit, 2)
     ];
 }
@@ -314,6 +350,8 @@ function getMonthComparison(mysqli $conn): array
     $quantityChange = $lastMonth['sold_quantity'] > 0 ? (($thisMonth['sold_quantity'] - $lastMonth['sold_quantity']) / $lastMonth['sold_quantity']) * 100 : ($thisMonth['sold_quantity'] > 0 ? 100 : 0);
     $salesChange = $lastMonth['sales'] > 0 ? (($thisMonth['sales'] - $lastMonth['sales']) / $lastMonth['sales']) * 100 : ($thisMonth['sales'] > 0 ? 100 : 0);
     $bookingsChange = $lastMonth['bookings'] > 0 ? (($thisMonth['bookings'] - $lastMonth['bookings']) / $lastMonth['bookings']) * 100 : ($thisMonth['bookings'] > 0 ? 100 : 0);
+    $pendingBookingsChange = $lastMonth['pending_bookings'] > 0 ? (($thisMonth['pending_bookings'] - $lastMonth['pending_bookings']) / $lastMonth['pending_bookings']) * 100 : ($thisMonth['pending_bookings'] > 0 ? 100 : 0);
+    $completedBookingsChange = $lastMonth['completed_bookings'] > 0 ? (($thisMonth['completed_bookings'] - $lastMonth['completed_bookings']) / $lastMonth['completed_bookings']) * 100 : ($thisMonth['completed_bookings'] > 0 ? 100 : 0);
     $profitChange = $lastMonth['profit'] > 0 ? (($thisMonth['profit'] - $lastMonth['profit']) / $lastMonth['profit']) * 100 : ($thisMonth['profit'] > 0 ? 100 : 0);
 
     return [
@@ -325,6 +363,8 @@ function getMonthComparison(mysqli $conn): array
             'quantity' => round($quantityChange, 1),
             'sales' => round($salesChange, 1),
             'bookings' => round($bookingsChange, 1),
+            'pending_bookings' => round($pendingBookingsChange, 1),
+            'completed_bookings' => round($completedBookingsChange, 1),
             'profit' => round($profitChange, 1)
         ]
     ];

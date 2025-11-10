@@ -21,6 +21,13 @@ switch ($action) {
         break;
 
     case 'add':
+        // Check if user is logged in
+        if (!isset($_SESSION['user_id'])) {
+            $_SESSION['login_errors'] = ['Please log in to place an order or book'];
+            header('Location: ../login.php');
+            exit;
+        }
+
         $productId = (int) ($_POST['product_id'] ?? 0);
         $quantity = max(1, (int) ($_POST['quantity'] ?? 1));
 
@@ -137,6 +144,11 @@ switch ($action) {
         $_SESSION['cart_errors'] = ['Unsupported cart action.'];
 }
 
-header('Location: ../cart.php');
+// Redirect based on action: add goes back to shop, others go to cart
+if ($action === 'add') {
+    header('Location: ../shop.php');
+} else {
+    header('Location: ../cart.php');
+}
 exit;
 

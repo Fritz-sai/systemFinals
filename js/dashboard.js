@@ -48,17 +48,19 @@ function initializeMonthComparisonChart() {
     if (!ctx || !salesData.monthComparison) return;
 
     const data = salesData.monthComparison;
-    const labels = ['Orders', 'Sales ($)', 'Bookings', 'Profit ($)'];
+    const labels = ['Orders', 'Sales ($)', 'Pending Bookings', 'Completed Bookings', 'Profit ($)'];
     const thisMonthData = [
-        data.this_month.orders,
+        data.this_month.sold_orders,
         data.this_month.sales,
-        data.this_month.bookings,
+        data.this_month.pending_bookings || 0,
+        data.this_month.completed_bookings || 0,
         data.this_month.profit
     ];
     const lastMonthData = [
-        data.last_month.orders,
+        data.last_month.sold_orders,
         data.last_month.sales,
-        data.last_month.bookings,
+        data.last_month.pending_bookings || 0,
+        data.last_month.completed_bookings || 0,
         data.last_month.profit
     ];
 
@@ -234,9 +236,13 @@ function updateSummaryCards(summary, comparison) {
     const salesEl = document.getElementById('summary-sales');
     if (salesEl) salesEl.textContent = '$' + summary.sales.toFixed(2);
     
-    // Update bookings
-    const bookingsEl = document.getElementById('summary-bookings');
-    if (bookingsEl) bookingsEl.textContent = summary.bookings;
+    // Update pending bookings
+    const pendingBookingsEl = document.getElementById('summary-pending-bookings');
+    if (pendingBookingsEl) pendingBookingsEl.textContent = summary.pending_bookings || 0;
+    
+    // Update completed bookings
+    const completedBookingsEl = document.getElementById('summary-completed-bookings');
+    if (completedBookingsEl) completedBookingsEl.textContent = summary.completed_bookings || 0;
     
     // Update profit
     const profitEl = document.getElementById('summary-profit');
@@ -247,7 +253,8 @@ function updateSummaryCards(summary, comparison) {
     updateChangeIndicator('summary-pending-orders-change', comparison.changes.pending_orders);
     updateChangeIndicator('summary-quantity-change', comparison.changes.quantity);
     updateChangeIndicator('summary-sales-change', comparison.changes.sales);
-    updateChangeIndicator('summary-bookings-change', comparison.changes.bookings);
+    updateChangeIndicator('summary-pending-bookings-change', comparison.changes.pending_bookings || 0);
+    updateChangeIndicator('summary-completed-bookings-change', comparison.changes.completed_bookings || 0);
     updateChangeIndicator('summary-profit-change', comparison.changes.profit);
 }
 
@@ -272,17 +279,19 @@ function updateCharts(data) {
             data.summary.sold_orders,
             data.summary.sold_quantity,
             data.summary.sales,
-            data.summary.bookings,
+            data.summary.pending_bookings || 0,
+            data.summary.completed_bookings || 0,
             data.summary.profit
         ];
         monthComparisonChart.data.datasets[1].data = [
             data.comparison.last_month.sold_orders,
             data.comparison.last_month.sold_quantity,
             data.comparison.last_month.sales,
-            data.comparison.last_month.bookings,
+            data.comparison.last_month.pending_bookings || 0,
+            data.comparison.last_month.completed_bookings || 0,
             data.comparison.last_month.profit
         ];
-        monthComparisonChart.data.labels = ['Sold Orders', 'Quantity Sold', 'Sales ($)', 'Bookings', 'Profit ($)'];
+        monthComparisonChart.data.labels = ['Sold Orders', 'Quantity Sold', 'Sales ($)', 'Pending Bookings', 'Completed Bookings', 'Profit ($)'];
         monthComparisonChart.update();
     }
 

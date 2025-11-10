@@ -97,6 +97,23 @@
     font-size: 0.9rem;
 }
 
+/* Delivered and Received Orders Sections */
+.delivered-orders {
+    border-left: 4px solid rgba(66, 186, 150, 0.5);
+}
+
+.delivered-orders h2 {
+    color: #218c74;
+}
+
+.received-orders {
+    border-left: 4px solid rgba(76, 175, 80, 0.5);
+}
+
+.received-orders h2 {
+    color: #388e3c;
+}
+
 .btn-sm {
     padding: 0.5rem 1rem;
     font-size: 0.9rem;

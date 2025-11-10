@@ -174,7 +174,173 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof salesData !== 'undefined' && typeof Chart !== 'undefined') {
         initializeSalesCharts();
     }
+
+    // Handle booking completion with AJAX to update dashboard
+    const bookingCompletionForms = document.querySelectorAll('form[action="admin.php"]');
+    bookingCompletionForms.forEach(form => {
+        const actionInput = form.querySelector('input[name="admin_action"]');
+        if (actionInput && actionInput.value === 'mark_booking_completed') {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                const bookingId = formData.get('booking_id');
+                const button = form.querySelector('button[type="submit"]');
+                const originalText = button.textContent;
+                
+                // Disable button and show loading state
+                button.disabled = true;
+                button.textContent = 'Processing...';
+                
+                try {
+                    // Optimistic update: decrease pending, increase completed
+                    const pendingBookingsEl = document.getElementById('summary-pending-bookings');
+                    const completedBookingsEl = document.getElementById('summary-completed-bookings');
+                    
+                    if (pendingBookingsEl) {
+                        const currentPending = parseInt(pendingBookingsEl.textContent) || 0;
+                        pendingBookingsEl.textContent = Math.max(0, currentPending - 1);
+                    }
+                    
+                    if (completedBookingsEl) {
+                        const currentCompleted = parseInt(completedBookingsEl.textContent) || 0;
+                        completedBookingsEl.textContent = currentCompleted + 1;
+                    }
+                    
+                    const response = await fetch('admin.php', {
+                        method: 'POST',
+                        body: formData,
+                        redirect: 'follow'
+                    });
+                    
+                    if (response.ok || response.redirected) {
+                        // Update booking count in dashboard overview
+                        updateBookingCount();
+                        
+                        // Remove the booking row from active bookings table
+                        const bookingRow = form.closest('tr');
+                        if (bookingRow) {
+                            bookingRow.style.opacity = '0.5';
+                            bookingRow.style.transition = 'opacity 0.3s';
+                            setTimeout(() => {
+                                bookingRow.remove();
+                                
+                                // Check if table is empty
+                                const tbody = bookingRow.closest('tbody');
+                                if (tbody && tbody.querySelectorAll('tr').length === 0) {
+                                    tbody.innerHTML = '<tr><td colspan="7">No active bookings.</td></tr>';
+                                }
+                            }, 300);
+                        }
+                        
+                        // Show success message
+                        showBookingNotification('Booking marked as completed successfully!', 'success');
+                        
+                        // Reload page after a short delay to refresh all data
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        throw new Error('Failed to complete booking');
+                    }
+                } catch (error) {
+                    console.error('Error completing booking:', error);
+                    button.disabled = false;
+                    button.textContent = originalText;
+                    showBookingNotification('Failed to complete booking. Please try again.', 'error');
+                }
+            });
+        }
+    });
 });
+
+/**
+ * Update booking count in dashboard overview
+ */
+async function updateBookingCount() {
+    try {
+        // Fetch updated dashboard data
+        const response = await fetch('php/get_dashboard_data.php?period=this_month');
+        const data = await response.json();
+        
+        if (data.success && data.summary) {
+            // Update pending bookings count
+            const pendingBookingsEl = document.getElementById('summary-pending-bookings');
+            if (pendingBookingsEl) {
+                pendingBookingsEl.textContent = data.summary.pending_bookings || 0;
+            }
+            
+            // Update completed bookings count
+            const completedBookingsEl = document.getElementById('summary-completed-bookings');
+            if (completedBookingsEl) {
+                completedBookingsEl.textContent = data.summary.completed_bookings || 0;
+            }
+            
+            // Update booking change indicators if available
+            if (data.comparison && data.comparison.changes) {
+                // Update pending bookings change
+                const pendingBookingsChangeEl = document.getElementById('summary-pending-bookings-change');
+                if (pendingBookingsChangeEl) {
+                    const change = data.comparison.changes.pending_bookings || 0;
+                    pendingBookingsChangeEl.textContent = (change >= 0 ? '+' : '') + change + '%';
+                    pendingBookingsChangeEl.className = 'card-change ' + (change >= 0 ? 'positive' : 'negative');
+                }
+                
+                // Update completed bookings change
+                const completedBookingsChangeEl = document.getElementById('summary-completed-bookings-change');
+                if (completedBookingsChangeEl) {
+                    const change = data.comparison.changes.completed_bookings || 0;
+                    completedBookingsChangeEl.textContent = (change >= 0 ? '+' : '') + change + '%';
+                    completedBookingsChangeEl.className = 'card-change ' + (change >= 0 ? 'positive' : 'negative');
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error updating booking count:', error);
+        // Fallback: update counts manually
+        const pendingBookingsEl = document.getElementById('summary-pending-bookings');
+        const completedBookingsEl = document.getElementById('summary-completed-bookings');
+        
+        if (pendingBookingsEl) {
+            const currentPending = parseInt(pendingBookingsEl.textContent) || 0;
+            pendingBookingsEl.textContent = Math.max(0, currentPending - 1);
+        }
+        
+        if (completedBookingsEl) {
+            const currentCompleted = parseInt(completedBookingsEl.textContent) || 0;
+            completedBookingsEl.textContent = currentCompleted + 1;
+        }
+    }
+}
+
+/**
+ * Show booking notification
+ */
+function showBookingNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        background: ${type === 'success' ? '#42ba96' : '#d32f2f'};
+        color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+    `;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 3000);
+}
 
 // Initialize Sales Analysis Charts
 function initializeSalesCharts() {

@@ -1,9 +1,9 @@
 <?php
 /**
- * Customer Orders Page
+ * Order History Page
  * 
- * Displays all orders for the logged-in customer
- * Shows order details, status, and proof of delivery if available
+ * Displays orders that have been delivered or received and have proof of delivery
+ * This is a filtered view showing only completed orders with proof
  */
 
 require_once __DIR__ . '/php/db_connect.php';
@@ -11,14 +11,14 @@ require_once __DIR__ . '/php/helpers.php';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
-    $_SESSION['login_errors'] = ['Please log in to view your orders.'];
+    $_SESSION['login_errors'] = ['Please log in to view your order history.'];
     header('Location: login.php');
     exit;
 }
 
 $userId = (int) $_SESSION['user_id'];
 
-// Get all orders for the current user
+// Get orders that are delivered or received AND have proof
 $stmt = $conn->prepare('
     SELECT o.*, 
            p.name AS product_name, 
@@ -27,6 +27,9 @@ $stmt = $conn->prepare('
     FROM orders o
     JOIN products p ON o.product_id = p.id
     WHERE o.user_id = ?
+      AND o.order_status IN (\'delivered\', \'received\')
+      AND o.proof_image IS NOT NULL
+      AND o.proof_image != \'\'
     ORDER BY o.order_date DESC
 ');
 $stmt->bind_param('i', $userId);
@@ -35,7 +38,7 @@ $result = $stmt->get_result();
 $orders = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 $stmt->close();
 
-renderHead('My Orders | PhoneFix+');
+renderHead('Order History | PhoneFix+');
 renderNav();
 renderFlashMessages([
     'cart_success' => 'success',
@@ -48,10 +51,10 @@ renderFlashMessages([
 <main class="page orders-page">
     <section class="page-header">
         <div class="container">
-            <h1>My Orders</h1>
-            <p>View your order history and delivery proofs.</p>
+            <h1>Order History</h1>
+            <p>View your completed orders with delivery proof.</p>
             <div class="page-actions">
-                <a href="order_history.php" class="btn-outline">View Completed Orders with Proof</a>
+                <a href="orders.php" class="btn-outline">View All Orders</a>
             </div>
         </div>
     </section>
@@ -60,28 +63,43 @@ renderFlashMessages([
         <?php if (empty($orders)): ?>
             <div class="card empty-orders">
                 <div class="empty-state">
-                    <div class="empty-icon">📦</div>
-                    <h2>No Orders Yet</h2>
-                    <p>You haven't placed any orders yet. Start shopping to see your orders here!</p>
-                    <a href="shop.php" class="btn-primary">Browse Products</a>
+                    <div class="empty-icon">📋</div>
+                    <h2>No Order History Yet</h2>
+                    <p>You don't have any completed orders with delivery proof yet.</p>
+                    <p class="empty-hint">Orders will appear here once they are delivered or received and proof is uploaded.</p>
+                    <div class="empty-actions">
+                        <a href="orders.php" class="btn-primary">View All Orders</a>
+                        <a href="shop.php" class="btn-outline">Continue Shopping</a>
+                    </div>
                 </div>
             </div>
         <?php else: ?>
+            <div class="history-header">
+                <div class="history-stats">
+                    <span class="stat-item">
+                        <strong><?php echo count($orders); ?></strong> completed orders with proof
+                    </span>
+                </div>
+            </div>
+            
             <div class="orders-list">
                 <?php foreach ($orders as $order): ?>
-                    <div class="card order-card" data-order-id="<?php echo (int) $order['id']; ?>">
+                    <div class="card order-card history-card" data-order-id="<?php echo (int) $order['id']; ?>">
                         <div class="order-header">
                             <div class="order-info">
                                 <h3>Order #<?php echo (int) $order['id']; ?></h3>
                                 <span class="order-date"><?php echo date('F j, Y g:i A', strtotime($order['order_date'])); ?></span>
                             </div>
                             <div class="order-status-badge">
-                                <span class="status status-<?php echo htmlspecialchars($order['order_status'] ?? 'pending'); ?>">
-                                    <?php 
-                                    $status = $order['order_status'] ?? 'pending';
-                                    echo ucfirst(str_replace('_', ' ', $status)); 
-                                    ?>
-                                </span>
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;">
+                                    <span class="status status-<?php echo htmlspecialchars($order['order_status']); ?>">
+                                        <?php 
+                                        $status = $order['order_status'];
+                                        echo ucfirst(str_replace('_', ' ', $status)); 
+                                        ?>
+                                    </span>
+                                    <span class="proof-badge">✓ Has Proof</span>
+                                </div>
                             </div>
                         </div>
 
@@ -125,13 +143,11 @@ renderFlashMessages([
                                 </div>
                             </div>
 
-                            <?php if (!empty($order['proof_image'])): ?>
-                                <div class="order-proof">
-                                    <button type="button" class="btn-primary view-proof-btn" data-proof-path="<?php echo htmlspecialchars($order['proof_image']); ?>">
-                                        📷 View Proof of Delivery
-                                    </button>
-                                </div>
-                            <?php endif; ?>
+                            <div class="order-proof">
+                                <button type="button" class="btn-primary view-proof-btn" data-proof-path="<?php echo htmlspecialchars($order['proof_image']); ?>">
+                                    📷 View Proof of Delivery
+                                </button>
+                            </div>
                         </div>
                     </div>
                 <?php endforeach; ?>
