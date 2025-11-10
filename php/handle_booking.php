@@ -61,6 +61,11 @@ if ($errors) {
 $stmt = $conn->prepare('INSERT INTO bookings (name, contact, phone_model, issue, date, time) VALUES (?, ?, ?, ?, ?, ?)');
 $stmt->bind_param('ssssss', $name, $contact, $phoneModel, $issue, $date, $time);
 
+$userId = (int) $_SESSION['user_id'];
+
+$stmt = $conn->prepare('INSERT INTO bookings (user_id, name, contact, phone_model, issue, date, time) VALUES (?, ?, ?, ?, ?, ?, ?)');
+$stmt->bind_param('issssss', $userId, $name, $contact, $phoneModel, $issue, $date, $time);
+
 if ($stmt->execute()) {
     $_SESSION['booking_success'] = 'Your booking has been received! We will confirm shortly.';
     unset($_SESSION['booking_old']);

@@ -166,6 +166,21 @@
     font-size: 1.25rem;
 }
 
+.order-status-message {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: var(--radius-sm, 8px);
+    background: rgba(239, 68, 68, 0.12);
+    border-left: 4px solid #ef4444;
+    color: #b91c1c;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+.order-status-message strong {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
 .order-delivery {
     padding: 1rem;
     background: var(--color-bg, #f9f9f9);

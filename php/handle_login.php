@@ -52,7 +52,7 @@ $_SESSION['user_role'] = $user['role'];
 $_SESSION['auth_success'] = 'Welcome back, ' . htmlspecialchars($user['name']) . '!';
 
 if ($user['role'] === 'admin') {
-    header('Location: ../admin.php');
+    header('Location: ../admin/dashboard.php');
 } else {
     header('Location: ../index.php');
 }

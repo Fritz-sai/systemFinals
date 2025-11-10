@@ -36,6 +36,7 @@ $tableQueries = [
     ) ENGINE=InnoDB",
     "CREATE TABLE IF NOT EXISTS bookings (
         id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NULL,
         name VARCHAR(100) NOT NULL,
         contact VARCHAR(50) NOT NULL,
         phone_model VARCHAR(100) NOT NULL,
@@ -43,7 +44,9 @@ $tableQueries = [
         date DATE NOT NULL,
         time TIME NOT NULL,
         status ENUM('pending', 'in_progress', 'completed', 'cancelled') DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        status_message TEXT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
     ) ENGINE=InnoDB",
     "CREATE TABLE IF NOT EXISTS products (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -65,8 +68,20 @@ $tableQueries = [
         shipping_fee DECIMAL(10,2) DEFAULT 0,
         proof_image VARCHAR(255) NULL,
         order_status ENUM('pending', 'out_for_delivery', 'delivered', 'received') DEFAULT 'pending',
+        status_message TEXT NULL,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB",
+    "CREATE TABLE IF NOT EXISTS notifications (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        type ENUM('order', 'booking', 'general') DEFAULT 'general',
+        reference_id INT NULL,
+        title VARCHAR(150) NOT NULL,
+        message TEXT NOT NULL,
+        is_read TINYINT(1) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     ) ENGINE=InnoDB"
 ];
 
@@ -158,7 +173,8 @@ function updateOrdersTable(mysqli $conn): void
         "delivery_type" => "ALTER TABLE orders ADD COLUMN delivery_type ENUM('pickup', 'delivery') DEFAULT 'pickup'",
         "shipping_fee" => "ALTER TABLE orders ADD COLUMN shipping_fee DECIMAL(10,2) DEFAULT 0",
         "proof_image" => "ALTER TABLE orders ADD COLUMN proof_image VARCHAR(255) NULL",
-        "order_status" => "ALTER TABLE orders ADD COLUMN order_status ENUM('pending', 'out_for_delivery', 'delivered', 'received') DEFAULT 'pending'"
+        "order_status" => "ALTER TABLE orders ADD COLUMN order_status ENUM('pending', 'out_for_delivery', 'delivered', 'received') DEFAULT 'pending'",
+        "status_message" => "ALTER TABLE orders ADD COLUMN status_message TEXT NULL"
     ];
 
     foreach ($columnsToAdd as $column => $query) {
@@ -172,10 +188,57 @@ function updateOrdersTable(mysqli $conn): void
     }
 }
 
+function updateBookingsTable(mysqli $conn): void
+{
+    $columnsToAdd = [
+        "status_message" => "ALTER TABLE bookings ADD COLUMN status_message TEXT NULL",
+        "user_id" => "ALTER TABLE bookings ADD COLUMN user_id INT NULL AFTER id"
+    ];
+
+    foreach ($columnsToAdd as $column => $sql) {
+        $check = $conn->query("SHOW COLUMNS FROM bookings LIKE '$column'");
+        if ($check && $check->num_rows == 0) {
+            $conn->query($sql);
+            if ($column === 'user_id') {
+                // Add foreign key if not present
+                $fkCheck = $conn->query("SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_NAME='bookings' AND COLUMN_NAME='user_id' AND REFERENCED_TABLE_NAME='users'");
+                if ($fkCheck && $fkCheck->num_rows == 0) {
+                    $conn->query("ALTER TABLE bookings ADD CONSTRAINT fk_bookings_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL");
+                }
+                if ($fkCheck) {
+                    $fkCheck->close();
+                }
+            }
+        }
+        if ($check) {
+            $check->close();
+        }
+    }
+}
+
+function updateNotificationsTable(mysqli $conn): void
+{
+    $columnsToAdd = [
+        "reference_id" => "ALTER TABLE notifications ADD COLUMN reference_id INT NULL AFTER type",
+        "type" => "ALTER TABLE notifications MODIFY COLUMN type ENUM('order','booking','general') DEFAULT 'general'"
+    ];
+
+    foreach ($columnsToAdd as $column => $sql) {
+        $check = $conn->query("SHOW COLUMNS FROM notifications LIKE '$column'");
+        if ($check && $check->num_rows == 0) {
+            $conn->query($sql);
+        }
+        if ($check) {
+            $check->close();
+        }
+    }
+}
 seedAdminUser($conn);
 seedProducts($conn);
 seedBookings($conn);
 updateOrdersTable($conn);
+updateBookingsTable($conn);
+updateNotificationsTable($conn);
 
 // Ensure sessions are started once per request
 if (session_status() === PHP_SESSION_NONE) {

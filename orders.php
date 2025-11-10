@@ -133,6 +133,18 @@ renderFlashMessages([
                                 </div>
                             <?php endif; ?>
                         </div>
+
+                        <?php if (!empty($order['status_message']) && strtolower($order['status'] ?? '') === 'cancelled'): ?>
+                            <div class="order-status-message">
+                                <strong>Update from the team</strong>
+                                <?php echo nl2br(htmlspecialchars($order['status_message'])); ?>
+                            </div>
+                        <?php elseif (!empty($order['status_message']) && strtolower($order['order_status'] ?? '') === 'cancelled'): ?>
+                            <div class="order-status-message">
+                                <strong>Update from the team</strong>
+                                <?php echo nl2br(htmlspecialchars($order['status_message'])); ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             </div>

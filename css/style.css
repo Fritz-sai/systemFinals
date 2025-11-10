@@ -84,6 +84,21 @@ img {
     color: var(--color-primary);
 }
 
+.nav-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    padding: 0 6px;
+    margin-left: 6px;
+    border-radius: 999px;
+    background: var(--color-primary);
+    color: var(--color-light);
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
 .nav-user {
     font-weight: 600;
     color: var(--color-primary);

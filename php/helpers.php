@@ -11,6 +11,17 @@ function renderNav(): void
 {
     $isLoggedIn = isset($_SESSION['user_id']);
     $role = $_SESSION['user_role'] ?? 'customer';
+    $unreadCount = 0;
+    if ($isLoggedIn) {
+        global $conn;
+        if ($stmt = $conn->prepare('SELECT COUNT(*) AS c FROM notifications WHERE user_id = ? AND is_read = 0')) {
+            $stmt->bind_param('i', $_SESSION['user_id']);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $unreadCount = (int)($result->fetch_assoc()['c'] ?? 0);
+            $stmt->close();
+        }
+    }
     echo '<header class="navbar">
         <div class="container nav-container">
             <div class="logo"><a href="index.php">PhoneFix+</a></div>
@@ -27,6 +38,11 @@ function renderNav(): void
         echo '<li class="nav-user">Hi, ' . htmlspecialchars($_SESSION['user_name'] ?? 'Customer') . '</li>';
         echo '<li><a href="orders.php">My Orders</a></li>';
         echo '<li><a href="order_history.php">Order History</a></li>';
+        echo '<li><a href="inbox.php">Inbox';
+        if ($unreadCount > 0) {
+            echo ' <span class="nav-badge">' . $unreadCount . '</span>';
+        }
+        echo '</a></li>';
         if ($role === 'admin') {
             echo '<li><a href="admin.php">Admin</a></li>';
         }
