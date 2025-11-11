@@ -18,7 +18,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $userId = (int) $_SESSION['user_id'];
 
-// Get orders that are delivered or received AND have proof
+// Get orders that are delivered or received AND have proof (excluding rejected orders)
 $stmt = $conn->prepare('
     SELECT o.*, 
            p.name AS product_name, 
@@ -30,6 +30,8 @@ $stmt = $conn->prepare('
       AND o.order_status IN (\'delivered\', \'received\')
       AND o.proof_image IS NOT NULL
       AND o.proof_image != \'\'
+      AND o.status != \'cancelled\'
+      AND o.order_status != \'cancelled\'
     ORDER BY o.order_date DESC
 ');
 $stmt->bind_param('i', $userId);

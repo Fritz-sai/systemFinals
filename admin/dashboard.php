@@ -19,12 +19,12 @@ $qMonth->execute();
 $qtyMonth = (int)($qMonth->get_result()->fetch_assoc()['qty'] ?? 0);
 $qMonth->close();
 
-// Bookings total + pending/done (week/month)
+// Bookings total + pending/done (week/month) - excluding rejected/cancelled
 $bWeek = $conn->prepare("SELECT 
 	SUM(status='pending') pending,
 	SUM(status IN ('completed','done')) done,
 	COUNT(*) total
-FROM bookings WHERE created_at >= ?");
+FROM bookings WHERE created_at >= ? AND status != 'cancelled'");
 $bWeek->bind_param('s', $startOfWeek);
 $bWeek->execute();
 $bW = $bWeek->get_result()->fetch_assoc() ?: ['pending'=>0,'done'=>0,'total'=>0];
@@ -33,14 +33,14 @@ $bMonth = $conn->prepare("SELECT
 	SUM(status='pending') pending,
 	SUM(status IN ('completed','done')) done,
 	COUNT(*) total
-FROM bookings WHERE created_at >= ?");
+FROM bookings WHERE created_at >= ? AND status != 'cancelled'");
 $bMonth->bind_param('s', $startOfMonth);
 $bMonth->execute();
 $bM = $bMonth->get_result()->fetch_assoc() ?: ['pending'=>0,'done'=>0,'total'=>0];
 $bMonth->close();
 
-// Orders total
-$ordersTotal = $conn->query("SELECT COUNT(*) c FROM orders")->fetch_assoc()['c'] ?? 0;
+// Orders total - excluding rejected/cancelled
+$ordersTotal = $conn->query("SELECT COUNT(*) c FROM orders WHERE status != 'cancelled' AND order_status != 'cancelled'")->fetch_assoc()['c'] ?? 0;
 // Users total (active only)
 $usersTotal = $conn->query("SELECT COUNT(*) c FROM users WHERE COALESCE(active,1)=1")->fetch_assoc()['c'] ?? 0;
 ?>

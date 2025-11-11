@@ -18,7 +18,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $userId = (int) $_SESSION['user_id'];
 
-// Get all orders for the current user
+// Get all orders for the current user (excluding rejected orders)
 $stmt = $conn->prepare('
     SELECT o.*, 
            p.name AS product_name, 
@@ -27,6 +27,8 @@ $stmt = $conn->prepare('
     FROM orders o
     JOIN products p ON o.product_id = p.id
     WHERE o.user_id = ?
+      AND o.status != \'cancelled\'
+      AND o.order_status != \'cancelled\'
     ORDER BY o.order_date DESC
 ');
 $stmt->bind_param('i', $userId);

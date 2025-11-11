@@ -29,7 +29,7 @@ if ($range === 'week') {
 	$start = '1970-01-01';
 }
 
-$stmt = $conn->prepare("SELECT * FROM bookings WHERE DATE(created_at) >= ? ORDER BY created_at DESC");
+$stmt = $conn->prepare("SELECT * FROM bookings WHERE DATE(created_at) >= ? AND status != 'cancelled' ORDER BY created_at DESC");
 $stmt->bind_param('s', $start);
 $stmt->execute();
 $bookings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
