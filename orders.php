@@ -41,7 +41,9 @@ renderHead('My Orders | PhoneFix+');
 renderNav();
 renderFlashMessages([
     'cart_success' => 'success',
-    'cart_errors' => 'error'
+    'cart_errors' => 'error',
+    'review_success' => 'success',
+    'review_errors' => 'error'
 ]);
 ?>
 <link rel="stylesheet" href="css/orders.css">
@@ -129,9 +131,62 @@ renderFlashMessages([
 
                             <?php if (!empty($order['proof_image'])): ?>
                                 <div class="order-proof">
-                                    <button type="button" class="btn-primary view-proof-btn" data-proof-path="<?php echo htmlspecialchars($order['proof_image']); ?>">
+                                    <button type="button" class="btn-primary view-proof-btn" data-proof-path="/systemFinals/<?php echo htmlspecialchars($order['proof_image']); ?>">
                                         📷 View Proof of Delivery
                                     </button>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <?php 
+                            // Check if order is delivered with proof and if user hasn't reviewed yet
+                            $hasReviewed = false;
+                            if ($order['order_status'] === 'delivered' && !empty($order['proof_image'])) {
+                                $checkStmt = $conn->prepare('SELECT id FROM reviews WHERE order_id = ?');
+                                $checkStmt->bind_param('i', $order['id']);
+                                $checkStmt->execute();
+                                $checkResult = $checkStmt->get_result();
+                                $hasReviewed = $checkResult->num_rows > 0;
+                                $checkStmt->close();
+                            }
+                            
+                            if ($order['order_status'] === 'delivered' && !empty($order['proof_image']) && !$hasReviewed): ?>
+                                <div class="order-review-section" style="margin-top: 1rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                    <h4 style="margin: 0 0 0.75rem 0; font-size: 1rem;">Review This Product</h4>
+                                    <form method="POST" action="php/handle_reviews.php" class="review-form">
+                                        <input type="hidden" name="action" value="submit_review">
+                                        <input type="hidden" name="product_id" value="<?php echo (int) $order['product_id']; ?>">
+                                        <input type="hidden" name="order_id" value="<?php echo (int) $order['id']; ?>">
+                                        
+                                        <div style="margin-bottom: 0.75rem;">
+                                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Rating (Click to select):</label>
+                                            <div class="rating-input" data-order-id="<?php echo (int) $order['id']; ?>" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                                <?php for ($i = 1; $i <= 5; $i++): ?>
+                                                    <label class="star-label" data-rating="<?php echo $i; ?>" style="cursor: pointer; font-size: 2rem; color: #d1d5db; transition: all 0.2s; user-select: none;">
+                                                        <input type="radio" name="rating" value="<?php echo $i; ?>" required style="display: none;">
+                                                        <span class="star">⭐</span>
+                                                    </label>
+                                                <?php endfor; ?>
+                                                <span class="rating-text" style="margin-left: 0.5rem; color: #6b7280; font-weight: 500; min-width: 100px;">Select rating</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="margin-bottom: 0.75rem;">
+                                            <label for="review-comment-<?php echo (int) $order['id']; ?>" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Your Review:</label>
+                                            <textarea 
+                                                id="review-comment-<?php echo (int) $order['id']; ?>" 
+                                                name="comment" 
+                                                rows="3" 
+                                                placeholder="Share your experience with this product..."
+                                                style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; font-family: inherit; resize: vertical;"
+                                            ></textarea>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn-primary" style="width: 100%;">Submit Review</button>
+                                    </form>
+                                </div>
+                            <?php elseif ($hasReviewed): ?>
+                                <div class="review-submitted" style="margin-top: 1rem; padding: 0.75rem; background: #d1fae5; border-radius: 8px; color: #065f46; text-align: center;">
+                                    ✓ You have already reviewed this product
                                 </div>
                             <?php endif; ?>
                         </div>

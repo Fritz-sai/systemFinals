@@ -30,6 +30,7 @@ function renderNav(): void
                     <li><a href="index.php">Home</a></li>
                     <li><a href="services.php">Services</a></li>
                     <li><a href="shop.php">Shop</a></li>
+                    <li><a href="reviews.php">Reviews</a></li>
                     <li><a href="booking.php">Book Repair</a></li>
                     <li><a href="contact.php">Contact</a></li>
                     <li><a href="cart.php">Cart</a></li>';

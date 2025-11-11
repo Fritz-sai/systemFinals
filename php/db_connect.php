@@ -82,6 +82,19 @@ $tableQueries = [
         is_read TINYINT(1) NOT NULL DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB",
+    "CREATE TABLE IF NOT EXISTS reviews (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        product_id INT NOT NULL,
+        order_id INT NULL,
+        rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+        comment TEXT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE SET NULL,
+        UNIQUE KEY unique_order_review (order_id)
     ) ENGINE=InnoDB"
 ];
 
@@ -192,7 +205,8 @@ function updateBookingsTable(mysqli $conn): void
 {
     $columnsToAdd = [
         "status_message" => "ALTER TABLE bookings ADD COLUMN status_message TEXT NULL",
-        "user_id" => "ALTER TABLE bookings ADD COLUMN user_id INT NULL AFTER id"
+        "user_id" => "ALTER TABLE bookings ADD COLUMN user_id INT NULL AFTER id",
+        "proof_image" => "ALTER TABLE bookings ADD COLUMN proof_image VARCHAR(255) NULL"
     ];
 
     foreach ($columnsToAdd as $column => $sql) {

@@ -7,7 +7,7 @@ $dateFrom = get('from');
 $dateTo = get('to');
 $type = get('type', 'all'); // 'all', 'bookings', 'orders'
 
-$whereBookings = "status IN ('completed', 'done')";
+$whereBookings = "status IN ('completed', 'done') AND proof_image IS NOT NULL AND proof_image != '' AND LENGTH(TRIM(proof_image)) > 0";
 $whereOrders = "order_status = 'delivered' AND status != 'cancelled' AND proof_image IS NOT NULL AND proof_image != ''";
 
 $paramsBookings = [];
@@ -48,7 +48,8 @@ if ($type === 'all' || $type === 'bookings') {
 		created_at as transaction_date,
 		NULL as total,
 		NULL as quantity,
-		NULL as product_name
+		NULL as product_name,
+		proof_image
 	FROM bookings 
 	WHERE $whereBookings
 	ORDER BY created_at DESC";
@@ -200,7 +201,7 @@ $totalRevenue = array_sum(array_column($orders, 'total'));
 						<?php endif; ?>
 					</td>
 					<td>
-						<?php if ($t['transaction_type'] === 'order' && !empty($t['proof_image'])): ?>
+						<?php if (!empty($t['proof_image'])): ?>
 							<button type="button" class="btn btn-outline view-proof-btn" data-proof-path="/systemFinals/<?php echo htmlspecialchars($t['proof_image']); ?>" style="font-size: 0.875rem;">
 								<i class="fa-solid fa-image"></i> View Proof
 							</button>
