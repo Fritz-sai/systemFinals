@@ -150,9 +150,9 @@ renderFlashMessages([
                             }
                             
                             if ($order['order_status'] === 'delivered' && !empty($order['proof_image']) && !$hasReviewed): ?>
-                                <div class="order-review-section" style="margin-top: 1rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                <div class="order-review-section" id="review-section-<?php echo (int) $order['id']; ?>" style="margin-top: 1rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
                                     <h4 style="margin: 0 0 0.75rem 0; font-size: 1rem;">Review This Product</h4>
-                                    <form method="POST" action="php/handle_reviews.php" class="review-form">
+                                    <form method="POST" action="php/handle_reviews.php" class="review-form" data-order-id="<?php echo (int) $order['id']; ?>">
                                         <input type="hidden" name="action" value="submit_review">
                                         <input type="hidden" name="product_id" value="<?php echo (int) $order['product_id']; ?>">
                                         <input type="hidden" name="order_id" value="<?php echo (int) $order['id']; ?>">

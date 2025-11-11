@@ -18,6 +18,9 @@ if (!isset($_SESSION['user_id'])) {
 $userId = (int) $_SESSION['user_id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'submit_review') {
+    // Check if this is an AJAX request
+    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    
     $productId = (int) ($_POST['product_id'] ?? 0);
     $orderId = (int) ($_POST['order_id'] ?? 0);
     $rating = (int) ($_POST['rating'] ?? 0);
@@ -76,19 +79,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $stmt->bind_param('iiiis', $userId, $productId, $orderId, $rating, $comment);
         
         if ($stmt->execute()) {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true, 'message' => 'Thank you! Your review has been submitted.']);
+                exit;
+            }
             $_SESSION['review_success'] = 'Thank you! Your review has been submitted.';
         } else {
+            if ($isAjax) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'Failed to submit review. Please try again.']);
+                exit;
+            }
             $_SESSION['review_errors'] = ['Failed to submit review. Please try again.'];
         }
         $stmt->close();
     } else {
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => implode(' ', $errors)]);
+            exit;
+        }
         $_SESSION['review_errors'] = $errors;
     }
     
+    // For non-AJAX requests, redirect back to orders page
     header('Location: orders.php');
     exit;
 }
 
+// If no action, redirect to orders
 header('Location: orders.php');
 exit;
 

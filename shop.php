@@ -86,26 +86,7 @@ renderFlashMessages([
                         </form>
                         
                         <!-- Reviews Preview -->
-                        <?php if (!empty($product['reviews'])): ?>
-                            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                                <strong style="font-size: 0.875rem; display: block; margin-bottom: 0.5rem;">Recent Reviews:</strong>
-                                <?php foreach (array_slice($product['reviews'], 0, 2) as $review): ?>
-                                    <div style="margin-bottom: 0.75rem; font-size: 0.875rem;">
-                                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
-                                            <div style="display: flex; gap: 0.125rem;">
-                                                <?php for ($i = 1; $i <= 5; $i++): ?>
-                                                    <span style="color: <?php echo $i <= $review['rating'] ? '#fbbf24' : '#d1d5db'; ?>; font-size: 0.75rem;">⭐</span>
-                                                <?php endfor; ?>
-                                            </div>
-                                            <span style="color: #6b7280; font-weight: 500;"><?php echo htmlspecialchars($review['user_name']); ?></span>
-                                        </div>
-                                        <?php if (!empty($review['comment'])): ?>
-                                            <p style="color: #4b5563; margin: 0; line-height: 1.4;"><?php echo htmlspecialchars(substr($review['comment'], 0, 100)); ?><?php echo strlen($review['comment']) > 100 ? '...' : ''; ?></p>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
+                        
                     </div>
                 </article>
             <?php endforeach; ?>

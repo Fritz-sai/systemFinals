@@ -457,8 +457,8 @@ renderFlashMessages([
                             </div>
                             <div style="text-align: right;">
                                 <div class="review-rating">
-                                    <?php for ($i = 1; $i <= 5; $i++): ?>
-                                        <span class="star" style="color: <?php echo $i <= $review['rating'] ? '#fbbf24' : '#d1d5db'; ?>;">⭐</span>
+                                    <?php for ($i = 1; $i <= (int)$review['rating']; $i++): ?>
+                                        <span class="star" style="color: #fbbf24;">⭐</span>
                                     <?php endfor; ?>
                                 </div>
                                 <div class="review-date">

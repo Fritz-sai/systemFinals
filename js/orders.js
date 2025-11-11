@@ -99,6 +99,69 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal(viewProofModal);
         }
     });
+    
+    // Handle review form submission via AJAX
+    document.querySelectorAll('.review-form').forEach(form => {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(form);
+            const orderId = form.getAttribute('data-order-id');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            const reviewSection = document.getElementById('review-section-' + orderId);
+            
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+            
+            try {
+                const response = await fetch('php/handle_reviews.php', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show success message and update UI without reloading
+                    if (reviewSection) {
+                        reviewSection.innerHTML = `
+                            <div style="padding: 1rem; background: #d1fae5; border-radius: 8px; color: #065f46; text-align: center;">
+                                <strong>✓ Thank you! Your review has been submitted.</strong>
+                            </div>
+                        `;
+                    }
+                    
+                    // Show a flash message at the top
+                    const flashDiv = document.createElement('div');
+                    flashDiv.className = 'flash-message flash-success';
+                    flashDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem; background: #10b981; color: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000;';
+                    flashDiv.textContent = '✓ Review submitted successfully!';
+                    document.body.appendChild(flashDiv);
+                    
+                    // Remove flash message after 3 seconds
+                    setTimeout(() => {
+                        flashDiv.style.opacity = '0';
+                        flashDiv.style.transition = 'opacity 0.3s ease';
+                        setTimeout(() => flashDiv.remove(), 300);
+                    }, 3000);
+                } else {
+                    alert(result.error || 'Failed to submit review. Please try again.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                }
+            } catch (error) {
+                console.error('Review submission error:', error);
+                alert('An error occurred while submitting your review. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
+    });
 });
 
 /**
