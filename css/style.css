@@ -913,6 +913,7 @@ th {
     bottom: 100px;
     right: 20px;
     width: 320px;
+    height: 460px;
     background: var(--color-light);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
@@ -943,6 +944,9 @@ th {
     padding: 1rem;
     display: grid;
     gap: 0.75rem;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .chat-bubble {
@@ -975,6 +979,42 @@ th {
     border-radius: var(--radius-sm);
     border: 1px solid var(--color-border);
     padding: 0.5rem 0.75rem;
+}
+
+.quick-replies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.qr {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--color-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition);
+    text-decoration: none;
+}
+
+.qr:hover {
+    background: rgba(42, 115, 255, 0.06);
+}
+
+.qr[disabled] {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.qr.link {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
 }
 
 .chatbot-toggle {

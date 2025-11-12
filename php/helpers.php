@@ -94,16 +94,16 @@ function renderFooter(): void
             <button id="chatbot-close" aria-label="Close chatbot">&times;</button>
         </div>
         <div class="chatbot-body">
-            <p>Hello! Need help booking a repair or finding accessories? Ask me anything.</p>
-            <ul>
-                <li>"How do I book a repair?"</li>
-                <li>"Show me screen protectors."</li>
-            </ul>
+            <div class="chat-bubble">
+                <strong>Assistant:</strong> Hi! What do you need help with today?
+            </div>
+            <div class="quick-replies" data-step="root">
+                <button class="qr" data-option="repair">Book a repair</button>
+                <button class="qr" data-option="accessories">Find accessories</button>
+                <button class="qr" data-option="hours">Store hours</button>
+            </div>
         </div>
-        <div class="chatbot-input">
-            <input type="text" placeholder="Type your question..." aria-label="Chatbot input" />
-            <button>Send</button>
-        </div>
+        <div class="chatbot-input" style="display:none"></div>
     </div>
     <button id="chatbot-toggle" class="chatbot-toggle" aria-label="Open chatbot">Chat with us</button>
 </body>

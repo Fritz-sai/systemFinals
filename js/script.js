@@ -30,6 +30,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Fallback: delegated handlers so different selectors still work
+    document.addEventListener('click', (event) => {
+        const openBtn = event.target && event.target.closest ? event.target.closest('#chatbot-toggle, .chatbot-toggle, [data-chatbot-toggle]') : null;
+        if (openBtn && chatbot) {
+            chatbot.style.display = 'flex';
+            if (openBtn.style) openBtn.style.display = 'none';
+        }
+
+        const closeBtn = event.target && event.target.closest ? event.target.closest('#chatbot-close, .chatbot-close, [data-chatbot-close]') : null;
+        if (closeBtn && chatbot) {
+            chatbot.style.display = 'none';
+            const toggleEl = document.querySelector('#chatbot-toggle, .chatbot-toggle, [data-chatbot-toggle]');
+            if (toggleEl && toggleEl.style) toggleEl.style.display = 'inline-flex';
+        }
+    });
+
     const fadeElements = document.querySelectorAll('.hero, .features article, .product-card, .service-card, .card');
     const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
@@ -47,28 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.observe(el);
     });
 
-    const chatbotInput = document.querySelector('#chatbot input[type="text"]');
     const chatbotBody = document.querySelector('.chatbot-body');
-    const chatbotSend = document.querySelector('.chatbot-input button');
-    if (chatbotInput && chatbotSend && chatbotBody) {
-        const suggestions = {
-            repair: 'You can book a repair by visiting the Book Repair page and completing the form. We will confirm within minutes.',
-            screen: 'Our screen protectors are crafted for clarity and strength. Check the Shop page for details.',
-            battery: 'Battery running low fast? Select Battery Replacement under Services or book a repair.',
-            hours: 'We are open Monday to Saturday 9 AM - 7 PM, Sunday 10 AM - 5 PM.'
-        };
-
-        const handleChat = () => {
-            const text = chatbotInput.value.trim();
-            if (!text) {
-                return;
-            }
-            appendMessage('You', text);
-            const response = getResponse(text.toLowerCase());
-            appendMessage('Assistant', response);
-            chatbotInput.value = '';
-        };
-
+    if (chatbotBody) {
         const appendMessage = (sender, message) => {
             const bubble = document.createElement('div');
             bubble.className = 'chat-bubble';
@@ -77,22 +73,164 @@ document.addEventListener('DOMContentLoaded', () => {
             chatbotBody.scrollTop = chatbotBody.scrollHeight;
         };
 
-        const getResponse = (query) => {
-            for (const key of Object.keys(suggestions)) {
-                if (query.includes(key)) {
-                    return suggestions[key];
-                }
-            }
-            return 'Thanks for reaching out! You can book repairs via the Book Repair page or explore accessories in the Shop. Need more help? Call us at +1 (555) 987-6543.';
+        const renderOptions = (buttons, stepAttr = 'root') => {
+            const container = document.createElement('div');
+            container.className = 'quick-replies';
+            container.setAttribute('data-step', stepAttr);
+            buttons.forEach(({ label, value }) => {
+                const btn = document.createElement('button');
+                btn.className = 'qr';
+                btn.setAttribute('data-option', value);
+                btn.textContent = label;
+                container.appendChild(btn);
+            });
+            chatbotBody.appendChild(container);
+            chatbotBody.scrollTop = chatbotBody.scrollHeight;
         };
 
-        chatbotSend.addEventListener('click', handleChat);
-        chatbotInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                handleChat();
+        const restart = () => {
+            renderOptions([
+                { label: 'Book a repair', value: 'repair' },
+                { label: 'Find accessories', value: 'accessories' },
+                { label: 'Store hours', value: 'hours' }
+            ], 'root');
+        };
+
+        const bootChat = () => {
+            if (chatbotBody.getAttribute('data-booted') === 'true') return;
+            appendMessage('Assistant', 'Hi! How can I help today?');
+            restart();
+            chatbotBody.setAttribute('data-booted', 'true');
+        };
+
+        const handleRoot = (value) => {
+            switch (value) {
+                case 'repair': {
+                    appendMessage('Assistant', 'What device needs repair?');
+                    renderOptions([
+                        { label: 'iPhone', value: 'device_iphone' },
+                        { label: 'Android phone', value: 'device_android' },
+                        { label: 'Tablet', value: 'device_tablet' }
+                    ], 'repair_device');
+                    break;
+                }
+                case 'accessories': {
+                    appendMessage('Assistant', 'Great! Which accessory are you looking for?');
+                    renderOptions([
+                        { label: 'Screen protectors', value: 'acc_screen' },
+                        { label: 'Cases', value: 'acc_cases' },
+                        { label: 'Chargers', value: 'acc_chargers' },
+                        { label: 'Cables', value: 'acc_cables' },
+                        { label: 'Audio', value: 'acc_audio' }
+                    ], 'accessories_cat');
+                    break;
+                }
+                case 'hours': {
+                    appendMessage('Assistant', 'We’re open Mon–Sat: 9:00 AM – 7:00 PM, Sun: 10:00 AM – 5:00 PM.');
+                    appendMessage('Assistant', 'What else can I help with?');
+                    restart();
+                    break;
+                }
+                default:
+                    break;
+            }
+        };
+
+        const handleRepairDevice = (value) => {
+            const device = value.replace('device_', '');
+            const deviceLabel = device === 'iphone' ? 'iPhone' : device === 'android' ? 'Android phone' : 'Tablet';
+            appendMessage('Assistant', `Got it — ${deviceLabel}. What seems to be the issue?`);
+            renderOptions([
+                { label: 'Screen damage', value: `issue_screen_${device}` },
+                { label: 'Battery problem', value: `issue_battery_${device}` },
+                { label: 'Not charging', value: `issue_charging_${device}` },
+                { label: 'Other issue', value: `issue_other_${device}` }
+            ], 'repair_issue');
+        };
+
+        const handleRepairIssue = (value) => {
+            const parts = value.split('_'); // ["issue", "<type>", "<device>"]
+            const issueType = parts[1];
+            const device = parts[2];
+            const issueLabel = issueType === 'screen' ? 'Screen damage' : issueType === 'battery' ? 'Battery problem' : issueType === 'charging' ? 'Charging issue' : 'Other issue';
+            const deviceLabel = device === 'iphone' ? 'iPhone' : device === 'android' ? 'Android phone' : 'Tablet';
+
+            appendMessage('Assistant', `Thanks! I recommend booking now so a technician can help.`);
+            const query = encodeURI(`?device=${deviceLabel}&issue=${issueLabel}`);
+            const container = document.createElement('div');
+            container.className = 'quick-replies';
+            container.innerHTML = `<a class="qr link" href="booking.php${query}">Go to Booking</a>`;
+            chatbotBody.appendChild(container);
+
+            appendMessage('Assistant', 'Need anything else?');
+            restart();
+        };
+
+        const handleAccessoriesCat = (value) => {
+            const map = {
+                acc_screen: 'Screen Protector',
+                acc_cases: 'Case',
+                acc_chargers: 'Charger',
+                acc_cables: 'Cable',
+                acc_audio: 'Audio'
+            };
+            const label = map[value] || 'Accessory';
+            appendMessage('Assistant', `Here are ${label.toLowerCase()} options.`);
+            const q = encodeURIComponent(label);
+            const container = document.createElement('div');
+            container.className = 'quick-replies';
+            container.innerHTML = `<a class="qr link" href="shop.php?search=${q}">Open Shop</a>`;
+            chatbotBody.appendChild(container);
+
+            appendMessage('Assistant', 'Need anything else?');
+            restart();
+        };
+
+        chatbotBody.addEventListener('click', (e) => {
+            const target = e.target;
+            const el = target && target.closest ? target.closest('.qr') : null;
+            if (!el) return;
+
+            const option = el.getAttribute('data-option');
+            const container = el.closest('.quick-replies');
+            const step = container ? container.getAttribute('data-step') : 'root';
+
+            // If this is a link without a routing option, let it navigate
+            if (!option) return;
+
+            // Mark user selection visually
+            const userBubble = document.createElement('div');
+            userBubble.className = 'chat-bubble';
+            userBubble.innerHTML = `<strong>You:</strong> ${el.textContent}`;
+            chatbotBody.appendChild(userBubble);
+
+            // Disable current options
+            if (container) {
+                const btns = container.querySelectorAll('button.qr');
+                btns.forEach((b) => b.setAttribute('disabled', 'true'));
+            }
+
+            // Route by step
+            switch (step) {
+                case 'root':
+                    handleRoot(option);
+                    break;
+                case 'repair_device':
+                    handleRepairDevice(option);
+                    break;
+                case 'repair_issue':
+                    handleRepairIssue(option);
+                    break;
+                case 'accessories_cat':
+                    handleAccessoriesCat(option);
+                    break;
+                default:
+                    break;
             }
         });
+
+        // Seed initial greeting and options once
+        bootChat();
     }
 });
 
